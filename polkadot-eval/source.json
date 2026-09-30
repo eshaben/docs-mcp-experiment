@@ -1,0 +1,9 @@
+{
+  "llms_txt": "https://docs.polkadot.com/llms.txt",
+  "db": "data/docs.sqlite",
+  "chunking": {
+    "max_tokens": 600,
+    "min_tokens": 100
+  },
+  "eval_set": "eval_set.jsonl"
+}
