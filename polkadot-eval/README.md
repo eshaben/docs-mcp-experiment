@@ -6,16 +6,28 @@ Everything specific to the Polkadot developer docs (docs.polkadot.com). The gene
 
 | File | What it is |
 |---|---|
-| `source.json` | Site config for `docs_mcp`: the llms.txt URL, the database path, chunk sizes, and where the eval set is. |
+| `source.json` | Site config for `docs_mcp`: the llms.txt URL, the database path, chunk sizes, search settings, and where the eval set is. |
 | `eval_set.csv` / `eval_set.jsonl` | 63 seed questions, each tied to the page **and section** that answers it. All 63 were checked against the published docs on 2026-10-08. |
 | `seed_questions.py` | The source list. Edit here, then rerun `verify.py`. |
 | `verify.py` | Downloads each expected page's published Markdown and checks that the page exists, the section heading exists, and the evidence phrase appears in that section and nowhere else on the page. Rewrites the CSV and JSONL files, and exits with status 1 if any question fails. |
+| `results/` | One `.json` and one `.md` per eval run, named with the date and the config it tested. Written by `docs_mcp/evaluate.py`. The runs are listed under "Results so far". |
+
+## Results so far
+
+Recall is hits out of 63 questions. Each run's `.md` file has the per-group scores and the per-question ranks.
+
+| Run | What changed | Page @1 / @3 / @5 | Section @1 / @3 / @5 |
+|---|---|---|---|
+| `2026-10-08-bm25-baseline` | Keyword search (BM25) with every switch off. | 32 / 47 / 53 | 15 / 25 / 31 |
+| `2026-10-08-bm25-split-tabs` | `chunking.split_tabs` on. | 34 / 47 / 54 | 16 / 25 / 33 |
+| `2026-10-08-bm25-heading-path` | `search.index_heading_path` on. | 35 / 50 / 54 | 17 / 25 / 31 |
+
+Both switches are still off in `source.json`. Neither has been decided yet.
 
 ## Plan
 
 | File | Phase | What it will do |
 |---|---|---|
-| `results/` | 3 onward | One file per eval run, named with the date and the config it tested. Written by `docs_mcp/evaluate.py`. |
 | `llms_full_baseline.py` | 5 | Load Polkadot's own pre-chunked corpus so it can be scored like any other search method. |
 
 `llms_full_baseline.py` in pseudocode:
