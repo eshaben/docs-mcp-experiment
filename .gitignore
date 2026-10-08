@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Generated databases (rebuild them with `python -m docs_mcp.ingest <site>/source.json`)
+/*/data/
