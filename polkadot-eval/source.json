@@ -3,7 +3,8 @@
   "db": "data/docs.sqlite",
   "chunking": {
     "max_tokens": 600,
-    "min_tokens": 100
+    "min_tokens": 100,
+    "split_tabs": false
   },
   "eval_set": "eval_set.jsonl"
 }
