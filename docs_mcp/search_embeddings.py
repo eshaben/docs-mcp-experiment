@@ -51,7 +51,7 @@ class EmbeddingIndex:
                           vector     BLOB NOT NULL,   -- float32
                           PRIMARY KEY (model, text_hash))""")
         # In page order, so chunks with the same score come back in a fixed order.
-        self.chunks = db.execute("SELECT url, heading_path, anchor, part, text, tokens "
+        self.chunks = db.execute("SELECT url, ord, heading_path, anchor, part, text, tokens "
                                  "FROM chunks ORDER BY url, ord").fetchall()
         texts = [embedded_text(json.loads(chunk["heading_path"]), chunk["text"],
                                index_heading_path) for chunk in self.chunks]
@@ -79,12 +79,15 @@ class EmbeddingIndex:
             return []
         query_vector = numpy.asarray(self.encode([query]), dtype=numpy.float32)[0]
         # The vectors are unit length, so the dot product is the cosine similarity.
-        scores = self.matrix @ query_vector
+        # (On Apple Silicon, NumPy's matrix multiply can warn about overflow or division by zero
+        # when nothing is wrong. The scores were checked against a plain sum, so it's silenced.)
+        with numpy.errstate(all="ignore"):
+            scores = self.matrix @ query_vector
         best = numpy.argsort(-scores, kind="stable")[:limit]
         results = []
         for index in best:
             chunk = self.chunks[index]
-            results.append(Result(chunk["url"], json.loads(chunk["heading_path"]),
+            results.append(Result(chunk["url"], chunk["ord"], json.loads(chunk["heading_path"]),
                                   chunk["anchor"], chunk["part"], chunk["text"], chunk["tokens"],
                                   float(scores[index])))
         return results

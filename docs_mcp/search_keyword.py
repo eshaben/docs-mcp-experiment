@@ -20,6 +20,7 @@ WORD = re.compile(r"[^\W_]+")
 
 class Result(NamedTuple):
     url: str
+    position: int   # the chunk's place on its page; with `url`, it identifies the chunk
     heading_path: list
     anchor: str
     part: int
@@ -57,14 +58,14 @@ def search(db, query, limit=5):
         return []
     # FTS5's bm25() is lower for better matches, so it's negated into a score.
     rows = db.execute(
-        """SELECT chunks.url, chunks.heading_path, chunks.anchor, chunks.part, chunks.text,
-                  chunks.tokens, -bm25(chunks_fts) AS score
+        """SELECT chunks.url, chunks.ord, chunks.heading_path, chunks.anchor, chunks.part,
+                  chunks.text, chunks.tokens, -bm25(chunks_fts) AS score
            FROM chunks_fts JOIN chunks ON chunks.id = chunks_fts.rowid
            WHERE chunks_fts MATCH ?
            ORDER BY score DESC, chunks.url, chunks.ord
            LIMIT ?""",
         (match, limit),
     )
-    return [Result(row["url"], json.loads(row["heading_path"]), row["anchor"], row["part"],
-                   row["text"], row["tokens"], row["score"])
+    return [Result(row["url"], row["ord"], json.loads(row["heading_path"]), row["anchor"],
+                   row["part"], row["text"], row["tokens"], row["score"])
             for row in rows]
