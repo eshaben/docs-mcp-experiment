@@ -6,5 +6,8 @@
     "min_tokens": 100,
     "split_tabs": false
   },
+  "search": {
+    "index_heading_path": false
+  },
   "eval_set": "eval_set.jsonl"
 }

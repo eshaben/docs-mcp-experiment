@@ -9,8 +9,12 @@ The source config is a JSON file; relative paths in it resolve against the confi
     {
       "llms_txt": "https://docs.polkadot.com/llms.txt",
       "db": "data/docs.sqlite",
-      "chunking": {"max_tokens": 600, "min_tokens": 100, "split_tabs": false}
+      "chunking": {"max_tokens": 600, "min_tokens": 100, "split_tabs": false},
+      "search": {"index_heading_path": false},
+      "eval_set": "eval_set.jsonl"
     }
+
+(`search` and `eval_set` are read by `docs_mcp.evaluate`, not by ingest.)
 
 Sync compares each page's front-matter `version_hash` (or a hash of the raw Markdown when a
 site has none) with the stored one, and only re-chunks pages that changed. Pages no longer in
