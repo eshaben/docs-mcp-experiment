@@ -3,12 +3,19 @@
     python -m docs_mcp.evaluate polkadot-eval/source.json --label bm25-baseline
     python -m docs_mcp.evaluate polkadot-eval/source.json --label bm25-split-tabs \\
         --baseline polkadot-eval/results/2026-10-08-bm25-baseline.json
+    python -m docs_mcp.evaluate polkadot-eval/source.json --method embeddings --label gte-baseline
+
+`--method` is `keyword` (the default) or `embeddings`. Embedding search needs the
+`sentence-transformers` package, and embeds any chunks it hasn't seen before it scores.
 
 It scores the chunks already in the database, so after changing a `chunking` setting, run
 `python -m docs_mcp.ingest <config> --rechunk` first. (It stops if the stored chunks weren't
 built with the config's settings.) Search settings come from the config's `search` block:
 
     "search": {"index_heading_path": false}
+
+`index_heading_path` applies to both methods. `embedding_model` can be added to name a model
+other than the default.
 
 For each question it searches once and records two ranks:
   - page rank: the first result on the expected page
@@ -85,14 +92,28 @@ def recall_rows(scores):
     return rows
 
 
-def run(config, questions, label):
+def searcher(db, method, config):
+    """The search function for a method, `search(query, limit)`, and the settings it used."""
+    settings = dict(config.get("search", {}))
+    index_heading_path = settings.get("index_heading_path", False)
+    if method == "keyword":
+        with db:
+            search_keyword.build_index(db, index_heading_path)
+        return (lambda query, limit: search_keyword.search(db, query, limit),
+                {"index_heading_path": index_heading_path})
+    # Imported here so that keyword search works without the embedding packages installed.
+    from . import search_embeddings
+    model_name = settings.get("embedding_model", search_embeddings.DEFAULT_MODEL)
+    index = search_embeddings.EmbeddingIndex(db, model_name, index_heading_path)
+    return index.search, {"index_heading_path": index_heading_path, "embedding_model": model_name}
+
+
+def run(config, questions, label, method="keyword"):
     db = store.connect(config["db"])
     if store.get_meta(db, "chunker") != chunker_signature(config):
         raise SystemExit("The stored chunks weren't built with this config's chunking settings. "
                          "Run `python -m docs_mcp.ingest <config> --rechunk` first.")
-    search_settings = {"index_heading_path": False, **config.get("search", {})}
-    with db:
-        search_keyword.build_index(db, **search_settings)
+    search, search_settings = searcher(db, method, config)
 
     # A question whose evidence is in no chunk can't be found by any search method. That's a
     # chunking or eval-set bug (or the stored pages are older than the eval set), not a miss.
@@ -104,7 +125,7 @@ def run(config, questions, label):
     scores = []
     tokens_returned = {cutoff: 0 for cutoff in CUTOFFS}
     for question in questions:
-        results = search_keyword.search(db, question["question"], limit=RANK_DEPTH)
+        results = search(question["question"], RANK_DEPTH)
         scores.append(score_question(question, results))
         for cutoff in CUTOFFS:
             tokens_returned[cutoff] += sum(result.tokens for result in results[:cutoff])
@@ -112,7 +133,7 @@ def run(config, questions, label):
     result = {
         "label": label,
         "date": date.today().isoformat(),
-        "method": "keyword",
+        "method": method,
         "chunker": json.loads(chunker_signature(config)),
         "search": search_settings,
         "pages": db.execute("SELECT COUNT(*) FROM pages").fetchone()[0],
@@ -143,7 +164,8 @@ def format_report(result, baseline=None):
         + " / ".join(str(result["mean_tokens_in_top"][str(cutoff)]) for cutoff in CUTOFFS),
     ]
     if baseline:
-        lines.append(f"- **Baseline:** {baseline['label']} ({baseline['date']}), mean tokens "
+        lines.append(f"- **Baseline:** {baseline['label']} ({baseline['date']}, "
+                     f"{baseline['method']}), mean tokens "
                      + " / ".join(str(baseline["mean_tokens_in_top"][str(cutoff)])
                                   for cutoff in CUTOFFS))
         lines += [f"- **Warning:** {warning}" for warning in _baseline_warnings(result, baseline)]
@@ -192,8 +214,6 @@ def _baseline_warnings(result, baseline):
     if ([score["id"] for score in result["questions"]]
             != [score["id"] for score in baseline["questions"]]):
         warnings.append("the questions differ from the baseline's")
-    if result["method"] != baseline["method"]:
-        warnings.append("the search method differs from the baseline's")
     return warnings
 
 
@@ -216,12 +236,14 @@ def main(argv=None):
     parser.add_argument("config", help="path to a source JSON config")
     parser.add_argument("--label", required=True,
                         help="a short name for the config being tested, used in the file name")
+    parser.add_argument("--method", choices=("keyword", "embeddings"), default="keyword")
     parser.add_argument("--baseline", help="a results .json to compare against")
     args = parser.parse_args(argv)
 
     site_folder = Path(args.config).resolve().parent
     config = load_config(args.config)
-    result = run(config, load_questions(site_folder / config["eval_set"]), args.label)
+    result = run(config, load_questions(site_folder / config["eval_set"]), args.label,
+                 args.method)
     baseline = json.loads(Path(args.baseline).read_text()) if args.baseline else None
     report = format_report(result, baseline)
 

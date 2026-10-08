@@ -4,10 +4,17 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from docs_mcp import evaluate, ingest, store
 from docs_mcp.search_keyword import Result
 from docs_mcp.sources import Page
+
+try:
+    import numpy
+    from docs_mcp import search_embeddings
+except ImportError:
+    numpy = None
 
 GUIDE = "https://x/guide/"
 NODES = "https://x/nodes/"
@@ -127,6 +134,25 @@ class RunTest(unittest.TestCase):
         self.assertIn("| q2 | tabs | 1 | - | 1 | found |", report)
         self.assertIn("| q3 |  | - | - | - |  |", report)
         self.assertIn("**Warning:** the stored pages differ from the baseline's", report)
+
+    @unittest.skipUnless(numpy, "embedding search needs numpy")
+    def test_embeddings_method(self):
+        words = ["pruned", "receipt", "binary"]
+
+        def encode(texts):
+            vectors = numpy.array([[text.lower().count(word) for word in words]
+                                   for text in texts], dtype=float) + 0.01
+            return vectors / numpy.linalg.norm(vectors, axis=1, keepdims=True)
+
+        with mock.patch.object(search_embeddings, "load_encoder", return_value=encode), \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.evaluate("--label", "meaning", "--method", "embeddings")
+        result = self.saved("meaning")
+        self.assertEqual(result["method"], "embeddings")
+        self.assertEqual(result["search"], {"index_heading_path": False,
+                                            "embedding_model": search_embeddings.DEFAULT_MODEL})
+        ranks = {score["id"]: score["section_rank"] for score in result["questions"]}
+        self.assertEqual((ranks["q1"], ranks["q2"]), (1, 1))
 
     def test_stops_when_chunks_dont_match_the_config(self):
         self.write_config(max_tokens=300)

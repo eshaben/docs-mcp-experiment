@@ -23,7 +23,7 @@ A change to cleaning, chunking or search is kept only if it helps people find an
 - **Same questions, same search method.**
 - **Each change is a switch.** A chunking or search option being evaluated gets an on/off setting in the site config, so "before" and "after" are two runs of the same code. It stays off by default until the eval shows it helps.
 
-A run is `python3 -m docs_mcp.evaluate <site>/source.json --label <name>`, with `--baseline <results .json>` to compare it against an earlier run.
+A run is `python3 -m docs_mcp.evaluate <site>/source.json --label <name>`, with `--baseline <results .json>` to compare it against an earlier run and `--method embeddings` to score embedding search instead of keyword search.
 
 **2. Record a baseline first.** Run with the switch off and log the result. Then turn it on and run again. Questions written to test a change are written against the code *before* the change, so their baseline score shows the problem.
 
@@ -73,4 +73,12 @@ To add another docs site, add a sibling folder with its own `source.json` config
 
 ## Requirements
 
-Python 3.10+. There are no other dependencies so far.
+Python 3.10+. Ingest, keyword search and the eval harness use only the standard library.
+
+Embedding search needs one package, which brings PyTorch and NumPy with it:
+
+```
+pip install sentence-transformers
+```
+
+The first run downloads the embedding model (`Alibaba-NLP/gte-modernbert-base`, about 600 MB) from Hugging Face. After that it runs offline.

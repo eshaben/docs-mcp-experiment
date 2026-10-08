@@ -2,7 +2,7 @@
 
 Planned entry point: `python -m docs_mcp <command> <site-config>`. It isn't wired up yet.
 Today ingest and eval exist, and they run as `python -m docs_mcp.ingest <site-config>` and
-`python -m docs_mcp.evaluate <site-config> --label <name>`.
+`python -m docs_mcp.evaluate <site-config> --label <name> [--method embeddings]`.
 
 This package works for any docs site that publishes an llms.txt file. Anything specific to
 one site (its config, eval set, and results) lives in that site's own folder.
@@ -14,7 +14,7 @@ COMMANDS
     ingest   download the site's pages, clean them, split them into chunks, and store them
              (built: `python -m docs_mcp.ingest`)
     eval     score each search method against the site's eval set (Phase 3)
-             (built for keyword search: `python -m docs_mcp.evaluate`)
+             (built for keyword and embedding search: `python -m docs_mcp.evaluate`)
     serve    run the MCP server (Phase 4)
 
 
@@ -43,10 +43,10 @@ ingest.py         run the steps above; on re-sync, only re-process pages that ch
 Search (Phase 3)
 ----------------
 search_keyword.py      keyword search (BM25, SQLite FTS5)   (built)
-search_embeddings.py   search by meaning (embeddings)
+search_embeddings.py   search by meaning (embeddings)   (built; the only module that needs
+                           installed packages: `pip install sentence-transformers`)
 search_hybrid.py       combine keyword and embedding results
-evaluate.py            (built, for keyword search; it gets a `--method` option when the
-                           second search method exists)
+evaluate.py            (built, for keyword and embedding search: `--method`)
                        for each search method and each eval question:
                            did the right page come back in the top 1, 3, 5?
                            did the right section come back? (a chunk on the expected page
