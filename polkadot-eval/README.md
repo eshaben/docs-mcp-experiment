@@ -24,6 +24,10 @@ Recall is hits out of 63 questions. Each run's `.md` file has the per-group scor
 | `2026-10-08-gte-baseline` | Embedding search (`gte-modernbert-base`) with every switch off. | 40 / 50 / 51 | 23 / 28 / 31 |
 | `2026-10-08-gte-split-tabs` | Embedding search, `chunking.split_tabs` on. | 39 / 50 / 51 | 22 / 28 / 32 |
 | `2026-10-08-gte-heading-path` | Embedding search, `search.index_heading_path` on. | 42 / 50 / 53 | 22 / 27 / 35 |
+| `2026-10-08-hybrid-baseline` | Hybrid search (keyword and embeddings, merged) with every switch off. | 44 / 52 / 56 | 20 / 29 / 36 |
+| `2026-10-08-hybrid-split-tabs` | Hybrid search, `chunking.split_tabs` on. | 44 / 52 / 56 | 21 / 31 / 37 |
+| `2026-10-08-hybrid-heading-path` | Hybrid search, `search.index_heading_path` on. | 43 / 55 / 56 | 19 / 32 / 36 |
+| `2026-10-08-hybrid-split-tabs-heading-path` | Hybrid search, both switches on. | 43 / 54 / 56 | 19 / 33 / 38 |
 
 Both switches are still off in `source.json`. Neither has been decided yet.
 
