@@ -1,8 +1,10 @@
 # Seed evaluation set for the Polkadot docs retrieval project.
-# Each item: (id, question, page path under docs/, section heading, style, evidence phrase)
+# Each item: (id, question, page path on the site, section heading, style, evidence phrase)
 # style: "error" = user pastes an error/symptom, "howto" = task question,
 #        "concept" = why/what question. Questions are deliberately phrased the way
 #        developers talk, not in the docs' own vocabulary.
+# evidence: a phrase from the answering section. On its page it must appear only in that
+#        section (verify.py checks this), so a chunk of that page that contains it is the answer.
 
 SEED = [
  # --- Smart contracts on Polkadot Hub (Ethereum developers) ---
@@ -13,23 +15,27 @@ SEED = [
  ("s03", "Sent some PAS from my Polkadot wallet to my 0x address and now I can't call contracts from my Substrate account. Do I need to link the two somehow?",
   "smart-contracts/for-eth-devs/accounts.md", "Account Registration", "concept", "Checking if the account is already mapped"),
  ("s04", "How does an 0x address get turned into a 32-byte Polkadot account if the user never registered it?",
-  "smart-contracts/for-eth-devs/accounts.md", "Fallback Accounts", "concept", "Keccak-256"),
+  "smart-contracts/for-eth-devs/accounts.md", "Fallback Accounts", "concept", "Falling back to the default conversion method"),
  ("s05", "My factory contract that does `new Child()` works on Sepolia but fails on Polkadot Hub with PVM. Why can't it just deploy the bytecode?",
-  "smart-contracts/for-eth-devs/contract-deployment.md", "Two-Step Deployment Model", "error", "Code upload"),
+  "smart-contracts/for-eth-devs/contract-deployment.md", "Two-Step Deployment Model", "error", "Contract bytecode must be uploaded to the chain before instantiation"),
  ("s06", "Is there a max contract size on PolkaVM? My compiled contract is pretty big.",
   "smart-contracts/for-eth-devs/evm-vs-pvm.md", "Current Memory Limits", "howto", "Contract code blob size"),
  ("s07", "Why does my event with a big string payload get rejected on PVM when it's fine on Ethereum?",
   "smart-contracts/for-eth-devs/evm-vs-pvm.md", "Current Memory Limits", "error", "Event data payload size"),
  ("s08", "MetaMask shows gas, but people keep saying Polkadot uses 'weight'. What's actually being charged?",
-  "smart-contracts/for-eth-devs/gas-model.md", "Gas vs Weight", "concept", "ref_time"),
+  "smart-contracts/for-eth-devs/gas-model.md", "Gas vs Weight", "concept", "a two-dimensional metric that combines `ref_time` and `proof_size`"),
  ("s09", "Why did my zero-balance account disappear? On Ethereum accounts just stay forever.",
   "smart-contracts/for-eth-devs/evm-vs-pvm.md", "Account Management - Existential Deposit", "concept", "Requires existential deposit"),
  ("s10", "Faucet gave me tokens but I don't see them in my wallet.",
   "smart-contracts/faucet.md", "Things to Consider", "error", "Tokens sent to addresses on different networks will not be accessible"),
  ("s11", "Can I run a local node to test Hardhat deployments without hitting the public TestNet?",
-  "smart-contracts/dev-environments/local-dev-node.md", "Install the Revive Dev Node and ETH-RPC Adapter", "howto", "Revive Dev node"),
+  "smart-contracts/dev-environments/local-dev-node.md", "Install the Revive Dev Node and ETH-RPC Adapter", "howto", "cargo build -p revive-dev-node --bin revive-dev-node --release"),
  ("s12", "Before I actually send a cross-chain message from Solidity, can I find out how much it will cost to execute?",
-  "smart-contracts/precompiles/xcm.md", "Weigh a Message", "howto", "weighMessage"),
+  "smart-contracts/precompiles/xcm.md", "Weigh a Message", "howto", "estimates the computational cost required to execute an XCM message"),
+ ("s13", "I started the Revive dev node locally but MetaMask and Hardhat can't talk to it. Do I need to run something else?",
+  "smart-contracts/dev-environments/local-dev-node.md", "Run the Local Node", "error", "translates Ethereum JSON-RPC calls into Substrate-compatible requests"),
+ ("s14", "I rely on the 2300 gas stipend from transfer() to stop reentrancy. Does that still protect me on PVM?",
+  "smart-contracts/for-eth-devs/evm-vs-pvm.md", "YUL Function Translation Differences", "concept", "does not provide reentrancy protection on PVM"),
 
  # --- Chain interactions (SDKs, fees, XCM transfers) ---
  ("c01", "How do I figure out what a transfer will cost in fees before I sign it, using PAPI?",
@@ -39,7 +45,7 @@ SEED = [
  ("c03", "My transaction just vanished from the pool after a while without ever getting included. Did it expire?",
   "reference/parachains/blocks-transactions-fees/transactions.md", "Transaction Mortality", "error", "Mortal transactions"),
  ("c04", "Sending DOT to another parachain and the recipient never got it — they had zero balance there. How do I check the minimum before sending?",
-  "chain-interactions/send-transactions/interoperability/transfer-assets-parachains.md", "Verify the Existential Deposit", "error", "verifyEdOnDestination"),
+  "chain-interactions/send-transactions/interoperability/transfer-assets-parachains.md", "Verify the Existential Deposit", "error", "meets the Existential Deposit (ED) requirement before sending"),
  ("c05", "Can I simulate an XCM transfer first so I don't lose funds if something's misconfigured?",
   "chain-interactions/send-transactions/interoperability/transfer-assets-parachains.md", "Perform a Dry Run", "howto", "Dry runs simulate the transaction without broadcasting it"),
  ("c06", "An XCM I sent last week failed on the destination and I have no idea why. Is there a way to replay it locally?",
@@ -55,11 +61,19 @@ SEED = [
  ("c11", "Why does the same public key show different addresses on Polkadot vs Kusama?",
   "reference/parachains/accounts.md", "Address Formats", "concept", "SS58"),
  ("c12", "How do I bridge ERC-20 tokens from Ethereum mainnet into Polkadot?",
-  "chain-interactions/send-transactions/interoperability/transfer-assets-into-polkadot.md", "Build and Execute the Bridge Transfer", "howto", "bridgeToPolkadot"),
+  "chain-interactions/send-transactions/interoperability/transfer-assets-into-polkadot.md", "Build and Execute the Bridge Transfer", "howto", "build and execute the bridge transfer from Ethereum to Polkadot Hub"),
  ("c13", "How do I get an existing token from my parachain recognized on Asset Hub so people can hold it there?",
   "chain-interactions/token-operations/register-foreign-asset.md", "Register a Foreign Asset", "howto", "To register a foreign asset on Polkadot Hub"),
  ("c14", "How do I create a liquidity pool between DOT and my token on Asset Hub?",
   "chain-interactions/token-operations/convert-assets.md", "Create a Liquidity Pool", "howto", "createPool"),
+ ("c15", "Can I hardcode the type IDs I see in the runtime metadata into my app?",
+  "reference/parachains/chain-data.md", "Pallets", "howto", "avoid relying on specific type identifiers"),
+ ("c16", "When does an account actually get reaped? Is it just the balance dropping below the existential deposit?",
+  "reference/parachains/accounts.md", "Account Reference Counters", "concept", "the account becomes deactivated and may be removed from the chain"),
+ ("c17", "How do I sign and send a DOT transfer from Python with py-substrate-interface?",
+  "chain-interactions/send-transactions/with-sdks.md", "Send Transactions", "howto", "create_signed_extrinsic"),
+ ("c18", "How do I read an account's nonce and free balance using Dedot?",
+  "chain-interactions/accounts/query-accounts.md", "Query Account Information", "howto", "DedotClient"),
 
  # --- Parachain / runtime development ---
  ("p01", "I submitted a runtime upgrade, it went through, but nothing changed on-chain. What did I miss?",
@@ -69,37 +83,47 @@ SEED = [
  ("p03", "I just want my parachain to produce a block occasionally for testing. Do I have to buy a whole core?",
   "parachains/launch-a-parachain/obtain-coretime.md", "Order On-Demand Coretime", "howto", "placeOrderAllowDeath"),
  ("p04", "When should I renew my coretime so I don't lose my core?",
-  "parachains/runtime-maintenance/coretime-renewal.md", "Renewal Timing", "howto", "interlude phase"),
+  "parachains/runtime-maintenance/coretime-renewal.md", "Renewal Timing", "howto", "strongly recommended that they be completed during the interlude phase"),
  ("p05", "My parachain is locked and I can't update the registration. How do I tell whether it's locked?",
-  "parachains/runtime-maintenance/unlock-parachains.md", "Check If the Parachain Is Locked", "error", "registrar"),
+  "parachains/runtime-maintenance/unlock-parachains.md", "Check If the Parachain Is Locked", "error", "Query the parachain locked status"),
  ("p06", "Two parachains need to talk to each other. What's the process to open the messaging channel?",
   "parachains/interoperability/channels-between-parachains.md", "Procedure to Initiate an HRMP Channel", "howto", "Fund Sender Sovereign Account"),
  ("p07", "I need two separate collective/membership pallets in the same runtime. Can I add the same pallet twice?",
-  "parachains/customize-runtime/add-pallet-instances.md", "Understanding Instantiable Pallets", "howto", "Instantiable pallets"),
+  "parachains/customize-runtime/add-pallet-instances.md", "Understanding Instantiable Pallets", "howto", "Not all pallets support multiple instances"),
  ("p08", "How do I write unit tests for my pallet without spinning up a real chain?",
   "parachains/customize-runtime/pallet-development/mock-runtime.md", "Understand Mock Runtimes", "howto", "Allows isolated testing"),
  ("p09", "Where do the numbers for #[pallet::weight] come from? I've just been guessing.",
   "parachains/customize-runtime/pallet-development/benchmark-pallet.md", "Introduction", "concept", "Benchmarking is the process of measuring"),
  ("p10", "How can I test my runtime changes against real mainnet state without deploying?",
-  "parachains/testing/fork-a-parachain.md", "Configure Chopsticks", "howto", "Chopsticks"),
+  "parachains/testing/fork-a-parachain.md", "Introduction", "howto", "you can fork live chains locally"),
  ("p11", "Is there a way to spin up a relay chain plus my parachain locally in one command?",
   "parachains/testing/run-a-parachain-network.md", "Spawn the Network", "howto", "zombienet spawn"),
  ("p12", "Build fails on my Mac with missing protoc / clang errors when compiling the SDK. What do I need installed?",
-  "parachains/install-polkadot-sdk.md", "Install Dependencies: macOS", "error", "protobuf"),
+  "parachains/install-polkadot-sdk.md", "Install Dependencies: macOS", "error", "Protobuf must be installed before the build process can begin"),
  ("p13", "I want to add EVM support to my parachain. Should I use Frontier or pallet-revive?",
-  "parachains/customize-runtime/add-smart-contract-functionality.md", "pallet-revive", "concept", "pallet-revive"),
+  "parachains/customize-runtime/add-smart-contract-functionality.md", "pallet-revive", "concept", "is the modern smart contract solution for Polkadot SDK-based chains"),
  ("p14", "Do I still need to write my own node binary for a parachain or is there a generic one?",
-  "reference/tools/omninode.md", "Introduction", "concept", "polkadot-omni-node"),
+  "reference/tools/omninode.md", "Introduction", "concept", "is a versatile, pre-built binary designed to simplify running parachains"),
+ ("p15", "After a runtime upgrade where I only renamed a storage item (same type), my pallet reads empty values. Why?",
+  "parachains/runtime-maintenance/storage-migrations.md", "Storage Migration Scenarios", "error", "Changing the storage key"),
+ ("p16", "How much more execution time does a parablock get with async backing than before?",
+  "reference/parachains/consensus/async-backing.md", "Synchronous VS. Asynchronous Processing", "concept", "allows for more time to execute"),
 
  # --- Node infrastructure / validators ---
  ("n01", "What hardware do I need to run a Polkadot validator? Will a cloud VM with 4 cores work?",
   "node-infrastructure/run-a-validator/requirements.md", "Minimum Hardware Requirements", "howto", "Eight physical cores"),
  ("n02", "I need to take my validator offline for maintenance for a few days without unbonding. What do I do?",
-  "node-infrastructure/run-a-validator/operational-tasks/pause-validating.md", "Chilling Your Node", "howto", "chill"),
+  "node-infrastructure/run-a-validator/operational-tasks/pause-validating.md", "Chilling Your Node", "howto", "temporarily step back from staking without unbonding your funds"),
  ("n03", "How do I expose my node's RPC over wss:// with a certificate?",
   "node-infrastructure/run-a-node/relay-chain/secure-wss.md", "Install a Proxy Server", "howto", "Install the `nginx` web server"),
  ("n04", "What gets you slashed as a validator?",
   "node-infrastructure/run-a-validator/staking-mechanics/offenses-and-slashes.md", "Offenses", "concept", "invalid votes and equivocations"),
+ ("n05", "Can I run my validator in a high-availability failover setup so it never goes offline?",
+  "node-infrastructure/run-a-validator/staking-mechanics/offenses-and-slashes.md", "Slashing", "howto", "High Availability (HA) systems are generally not recommended"),
+ ("n06", "I generated my collator's session keys with subkey and inserted them into the keystore, but set_keys won't accept them.",
+  "node-infrastructure/run-a-collator.md", "Generate Session Keys", "error", "Subkey is no longer supported"),
+ ("n07", "What should the systemd service file look like if I run my collator with systemd instead of Docker?",
+  "node-infrastructure/run-a-collator.md", "Run the Collator", "howto", "Description=Polkadot System Parachain Collator"),
 
  # --- Polkadot apps / product SDK ---
  ("a01", "Getting `no allowance set for account` even though I definitely approved the allowance.",
@@ -113,5 +137,16 @@ SEED = [
  ("a05", "My tests crash because chain-client throws when I run them in Node. Can't I just give it a websocket URL?",
   "apps/troubleshooting.md", "Connecting to a Chain Throws Outside a Host", "error", "no direct-WebSocket fallback"),
  ("a06", "Should I keep my app's data in a contract, on the Bulletin Chain, or somewhere else?",
-  "apps/concepts/data-placement.md", "The Options at a Glance", "concept", "Statement Store"),
+  "apps/concepts/data-placement.md", "The Options at a Glance", "concept", "Enforced shared state and logic"),
+ ("a07", "My big file upload to the Bulletin Chain failed partway through. Are the chunks that already went through still on chain?",
+  "apps/build/store-data-on-chain.md", "Store a Larger File", "error", "Chunked uploads are not atomic"),
+ ("a08", "Do shorter dotNS names cost more to register on Paseo?",
+  "apps/get-started/get-testnet-tokens.md", "Service Allowances", "concept", "whatever its length"),
 ]
+
+# Targeted groups: questions written to test one chunking decision. Membership is fixed here,
+# never recomputed from the current chunks. See "Targeted question groups" in README.md.
+GROUPS = {
+    "packing": ["s13", "s14", "c15", "c16", "p15", "p16", "n05", "n06", "a07", "a08"],
+    "tabs": ["c17", "c18", "n07"],
+}

@@ -12,5 +12,5 @@ The first site for the project. The general plan and conventions are in the root
 - Pre-chunked corpus: `https://docs.polkadot.com/ai/llms-full.jsonl`.
 
 ## Evaluation set
-- 50 seed questions in `eval_set.csv` / `eval_set.jsonl`. Edit them in `seed_questions.py`, then rerun `verify.py`.
-- **Re-verifying:** `python3 polkadot-eval/verify.py` checks every item against the live published Markdown pages, the same source the pipeline ingests. Don't verify against a clone of the docs repo. All 50 passed on 2026-09-29. The live site changes, so rerun it before each eval run.
+- 63 seed questions in `eval_set.csv` / `eval_set.jsonl`. Edit them in `seed_questions.py`, then rerun `verify.py`. Some belong to targeted groups that test one chunking decision each; see "Targeted question groups" in `README.md`.
+- **Re-verifying:** `python3 polkadot-eval/verify.py` checks every item against the live published Markdown pages, the same source the pipeline ingests. Don't verify against a clone of the docs repo. All 63 passed on 2026-10-08. The live site changes, so rerun it before each eval run.
