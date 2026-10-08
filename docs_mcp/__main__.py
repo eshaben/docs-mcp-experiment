@@ -44,7 +44,7 @@ Search (Phase 3)
 ----------------
 search_keyword.py      keyword search (BM25, SQLite FTS5)   (built)
 search_embeddings.py   search by meaning (embeddings)   (built; the only module that needs
-                           installed packages: `pip install sentence-transformers`)
+                           installed packages: `pip install -r requirements.txt`)
 search_hybrid.py       combine keyword and embedding results
 evaluate.py            (built, for keyword and embedding search: `--method`)
                        for each search method and each eval question:

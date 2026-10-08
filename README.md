@@ -75,10 +75,10 @@ To add another docs site, add a sibling folder with its own `source.json` config
 
 Python 3.10+. Ingest, keyword search and the eval harness use only the standard library.
 
-Embedding search needs one package, which brings PyTorch and NumPy with it:
+Embedding search needs one package, `sentence-transformers`, which brings PyTorch and NumPy with it. It's listed in `requirements.txt`:
 
 ```
-pip install sentence-transformers
+pip install -r requirements.txt
 ```
 
 The first run downloads the embedding model (`Alibaba-NLP/gte-modernbert-base`, about 600 MB) from Hugging Face. After that it runs offline.
