@@ -21,6 +21,9 @@ Recall is hits out of 63 questions. Each run's `.md` file has the per-group scor
 | `2026-10-08-bm25-baseline` | Keyword search (BM25) with every switch off. | 32 / 47 / 53 | 15 / 25 / 31 |
 | `2026-10-08-bm25-split-tabs` | `chunking.split_tabs` on. | 34 / 47 / 54 | 16 / 25 / 33 |
 | `2026-10-08-bm25-heading-path` | `search.index_heading_path` on. | 35 / 50 / 54 | 17 / 25 / 31 |
+| `2026-10-08-gte-baseline` | Embedding search (`gte-modernbert-base`) with every switch off. | 40 / 50 / 51 | 23 / 28 / 31 |
+| `2026-10-08-gte-split-tabs` | Embedding search, `chunking.split_tabs` on. | 39 / 50 / 51 | 22 / 28 / 32 |
+| `2026-10-08-gte-heading-path` | Embedding search, `search.index_heading_path` on. | 42 / 50 / 53 | 22 / 27 / 35 |
 
 Both switches are still off in `source.json`. Neither has been decided yet.
 
