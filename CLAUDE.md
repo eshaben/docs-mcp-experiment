@@ -27,9 +27,11 @@ Each folder's plan lives in that folder: `docs_mcp/__main__.py` for the general 
 - **Cleanup:** convert MkDocs Material leftovers (termynal HTML, admonitions, content tabs) into plain Markdown, keeping tab labels with their content. Measure its effect in Phase 3 by running the eval with and without it.
 
 ## Evaluation
-- Fields: `id`, `question`, `expected_url`, `expected_section`, `expected_anchor`, `source_file`, `style` (error/howto/concept), `area`, `evidence`, `origin` (seed / field), `verified`.
-- **Scoring:** report a hit at the page level (`expected_url` in the top k) and at the section level (the retrieved chunk contains `evidence`, case-insensitive). Report recall@1, @3, and @5.
+- Fields: `id`, `question`, `expected_url`, `expected_section`, `expected_anchor`, `style` (error/howto/concept), `area`, `evidence`, `origin` (seed / field), `group` (empty for general questions, or the targeted group the question belongs to), `verified`.
+- **Scoring:** report a hit at the page level (`expected_url` in the top k) and at the section level (a retrieved chunk is on the expected page and contains `evidence`, case-insensitive). `verify.py` guarantees each phrase appears on its page only inside the expected section, so this rule doesn't depend on how the page was chunked. Report recall@1, @3, and @5.
 - **Keep origins separate:** `seed` questions were written from the docs and are easier than real ones. If hand-collected `field` questions are added, report their scores separately.
+- **Targeted groups:** a question's `group` is set when it's written, against the code *before* the change it tests, and never recomputed from the current chunks. Report each group separately.
+- **Evaluating a change:** follow "Evaluating a change" in the root README. In short: the change goes behind a config switch, off by default. Record a baseline on the stored pages. Report per-group recall, a per-question rank diff, and the tokens returned in the top k. Keep the change only if it passes a decision rule written down before the run.
 
 ## Conventions
 - Keep dependencies light, and prefer local-first storage: SQLite (FTS5 for keyword search, plus a vector extension) or LanceDB/Chroma. No hosted vector database.

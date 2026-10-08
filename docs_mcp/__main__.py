@@ -1,6 +1,7 @@
 """docs_mcp: the plan.
 
-Entry point: `python -m docs_mcp <command> <site-config>`.
+Planned entry point: `python -m docs_mcp <command> <site-config>`. It isn't wired up yet.
+Today only ingest exists, and it runs as `python -m docs_mcp.ingest <site-config>`.
 
 This package works for any docs site that publishes an llms.txt file. Anything specific to
 one site (its config, eval set, and results) lives in that site's own folder.
@@ -10,8 +11,9 @@ COMMANDS
 ========
 
     ingest   download the site's pages, clean them, split them into chunks, and store them
-    eval     score each search method against the site's eval set
-    serve    run the MCP server
+             (built: `python -m docs_mcp.ingest`)
+    eval     score each search method against the site's eval set (Phase 3)
+    serve    run the MCP server (Phase 4)
 
 
 SITE CONFIG
@@ -20,7 +22,7 @@ SITE CONFIG
     llms_txt    URL of the site's llms.txt
     db          where to store the pages and chunks
     eval_set    path to the site's eval questions
-    chunking    chunk size settings
+    chunking    chunking settings: the chunk sizes, and switches for changes under evaluation
 
 
 MODULES
@@ -29,6 +31,7 @@ MODULES
 Ingest (Phase 2)
 ----------------
 sources.py        read the page list from llms.txt and download each page's Markdown
+mdlines.py        track, line by line, whether a line is inside a fenced code block
 mkdocs_clean.py   convert docs-generator markup into plain Markdown
 chunking.py       split each page into chunks by heading; never split a code block
 store.py          save pages and chunks to SQLite
@@ -41,12 +44,20 @@ search_embeddings.py   search by meaning (embeddings)
 search_hybrid.py       combine keyword and embedding results
 evaluate.py            for each search method and each eval question:
                            did the right page come back in the top 1, 3, 5?
-                           did the right section come back?
-                       save the scores to the site's results folder
+                           did the right section come back? (a chunk on the expected page
+                               that contains the evidence)
+                       report recall for all questions, general questions only, each
+                           targeted `group`, and seed vs. field questions
+                       report each question's rank, and a diff against a baseline run
+                       report the tokens returned in the top k
+                       save the scores, the config, and the page version_hashes used
+                           to the site's results folder
+                       (the method is in the root README, "Evaluating a change")
 
 MCP server (Phase 4)
 --------------------
 server.py   expose search_docs(query), get_page(url), and list_sections() as MCP tools
+            (get_page serves cleaned text: call mkdocs_clean.remove_block_markers on it)
 
 Comparison (Phase 5)
 --------------------
@@ -58,4 +69,5 @@ scored by evaluate.py like any other search method.
 """
 
 if __name__ == "__main__":
-    raise SystemExit("Not implemented yet. See the plan in docs_mcp/__main__.py.")
+    raise SystemExit("Not wired up yet. To ingest, run `python -m docs_mcp.ingest <site-config>`. "
+                     "The plan is in docs_mcp/__main__.py.")
