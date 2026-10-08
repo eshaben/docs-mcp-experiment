@@ -5,8 +5,9 @@
         --baseline polkadot-eval/results/2026-10-08-bm25-baseline.json
     python -m docs_mcp.evaluate polkadot-eval/source.json --method embeddings --label gte-baseline
 
-`--method` is `keyword` (the default) or `embeddings`. Embedding search needs the
-`sentence-transformers` package, and embeds any chunks it hasn't seen before it scores.
+`--method` is `keyword` (the default), `embeddings`, or `hybrid` (both, merged). Embedding
+search needs the `sentence-transformers` package, and embeds any chunks it hasn't seen before
+it scores.
 
 It scores the chunks already in the database, so after changing a `chunking` setting, run
 `python -m docs_mcp.ingest <config> --rechunk` first. (It stops if the stored chunks weren't
@@ -14,7 +15,7 @@ built with the config's settings.) Search settings come from the config's `searc
 
     "search": {"index_heading_path": false}
 
-`index_heading_path` applies to both methods. `embedding_model` can be added to name a model
+`index_heading_path` applies to keyword and embedding search alike. `embedding_model` can be added to name a model
 other than the default.
 
 For each question it searches once and records two ranks:
@@ -31,7 +32,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from . import search_keyword, store
+from . import search_hybrid, search_keyword, store
 from .ingest import chunker_signature, load_config
 
 CUTOFFS = (1, 3, 5)
@@ -93,19 +94,25 @@ def recall_rows(scores):
 
 
 def searcher(db, method, config):
-    """The search function for a method, `search(query, limit)`, and the settings it used."""
+    """The search function for a method, `search(query, limit)`, and the settings it used.
+    `hybrid` builds both of the others and merges their results."""
     settings = dict(config.get("search", {}))
     index_heading_path = settings.get("index_heading_path", False)
-    if method == "keyword":
+    used_settings = {"index_heading_path": index_heading_path}
+    searches = []
+    if method in ("keyword", "hybrid"):
         with db:
             search_keyword.build_index(db, index_heading_path)
-        return (lambda query, limit: search_keyword.search(db, query, limit),
-                {"index_heading_path": index_heading_path})
-    # Imported here so that keyword search works without the embedding packages installed.
-    from . import search_embeddings
-    model_name = settings.get("embedding_model", search_embeddings.DEFAULT_MODEL)
-    index = search_embeddings.EmbeddingIndex(db, model_name, index_heading_path)
-    return index.search, {"index_heading_path": index_heading_path, "embedding_model": model_name}
+        searches.append(lambda query, limit: search_keyword.search(db, query, limit))
+    if method in ("embeddings", "hybrid"):
+        # Imported here so that keyword search works without the embedding packages installed.
+        from . import search_embeddings
+        model_name = settings.get("embedding_model", search_embeddings.DEFAULT_MODEL)
+        searches.append(search_embeddings.EmbeddingIndex(db, model_name, index_heading_path).search)
+        used_settings["embedding_model"] = model_name
+    if method == "hybrid":
+        return lambda query, limit: search_hybrid.search(searches, query, limit), used_settings
+    return searches[0], used_settings
 
 
 def run(config, questions, label, method="keyword"):
@@ -236,7 +243,8 @@ def main(argv=None):
     parser.add_argument("config", help="path to a source JSON config")
     parser.add_argument("--label", required=True,
                         help="a short name for the config being tested, used in the file name")
-    parser.add_argument("--method", choices=("keyword", "embeddings"), default="keyword")
+    parser.add_argument("--method", choices=("keyword", "embeddings", "hybrid"),
+                        default="keyword")
     parser.add_argument("--baseline", help="a results .json to compare against")
     args = parser.parse_args(argv)
 

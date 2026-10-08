@@ -29,7 +29,7 @@ def _question(question_id, text, url, evidence, group="", origin="seed"):
 
 
 def _result(url, text):
-    return Result(url, ["Page"], "", 0, text, 10, 1.0)
+    return Result(url, 0, ["Page"], "", 0, text, 10, 1.0)
 
 
 class ScoringTest(unittest.TestCase):
@@ -151,6 +151,21 @@ class RunTest(unittest.TestCase):
         self.assertEqual(result["method"], "embeddings")
         self.assertEqual(result["search"], {"index_heading_path": False,
                                             "embedding_model": search_embeddings.DEFAULT_MODEL})
+        ranks = {score["id"]: score["section_rank"] for score in result["questions"]}
+        self.assertEqual((ranks["q1"], ranks["q2"]), (1, 1))
+
+    @unittest.skipUnless(numpy, "embedding search needs numpy")
+    def test_hybrid_method(self):
+        def encode(texts):
+            vectors = numpy.array([[text.lower().count("receipt"), 1.0] for text in texts])
+            return vectors / numpy.linalg.norm(vectors, axis=1, keepdims=True)
+
+        with mock.patch.object(search_embeddings, "load_encoder", return_value=encode), \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.evaluate("--label", "both", "--method", "hybrid")
+        result = self.saved("both")
+        self.assertEqual(result["method"], "hybrid")
+        self.assertIn("embedding_model", result["search"])
         ranks = {score["id"]: score["section_rank"] for score in result["questions"]}
         self.assertEqual((ranks["q1"], ranks["q2"]), (1, 1))
 
